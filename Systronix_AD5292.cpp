@@ -11,23 +11,23 @@
  #include "WProgram.h"
 #endif
 
-#include "Systronix_AD5274.h"
+#include "That8BitMan_AD5292.h"
 
 #include <inttypes.h>
 
  byte _DEBUG = 1;
- 
- 
- 
+
+
+
 
 /**
  * Constructor
  * @param base the I2C base address
- * @see AD5274_BASE_ADDR_GND
- * @see AD5274_BASE_ADDR_VDD
- * @see AD5274_BASE_ADDR_FLOAT
+ * @see AD5292_BASE_ADDR_GND
+ * @see AD5292_BASE_ADDR_VDD
+ * @see AD5292_BASE_ADDR_FLOAT
  */
-Systronix_AD5274::Systronix_AD5274(uint8_t base)
+That8BitMan_AD5292::That8BitMan_AD5292(uint8_t base)
 {
 	_base = base;
 	BaseAddr = base;
@@ -38,7 +38,7 @@ Systronix_AD5274::Systronix_AD5274(uint8_t base)
  *
  * @return 0 if no I2C errors, else the error count
  */
-int8_t Systronix_AD5274::begin(void) {
+int8_t That8BitMan_AD5292::begin(void) {
 	uint8_t b = 0;
 	Wire.begin();	// join I2C as master
 //	  Wire.beginTransmission(_base);
@@ -60,15 +60,15 @@ int8_t Systronix_AD5274::begin(void) {
  * This can be a value or a combination of manifest constants. The default, POR value for
  * these bits is 000
  *
- * @see AD5274_50TP_WRITE_ENABLE
- * @see AD5274_RDAC_WIPER_WRITE_ENABLE
- * @see AD5274_RDAC_CALIB_DISABLE
+ * @see AD5292_50TP_WRITE_ENABLE
+ * @see AD5292_RDAC_WIPER_WRITE_ENABLE
+ * @see AD5292_RDAC_CALIB_DISABLE
  *
  * @return 0 if successful, nonzero for total number of errors which occurred
  *
  * @TODO this seems redundant. Instead reuse the more generic command_write function.
  */
-int8_t Systronix_AD5274::control_write_verified(uint8_t control)
+int8_t That8BitMan_AD5292::control_write_verified(uint8_t control)
 {
 	uint8_t error_count = 0;
 	uint8_t data = 0;
@@ -79,11 +79,11 @@ int8_t Systronix_AD5274::control_write_verified(uint8_t control)
 
 	if (control > 7)	// bad value, what is caller's intent?
 	{
-		// AD5274 will ignore all bits except 2:0 so we can proceed
+		// AD5292 will ignore all bits except 2:0 so we can proceed
 		// but this is still not good, so bump the error counter
 		error_count++;
 	}
-	data_to_write = (AD5274_CONTROL_WRITE<<10) | control;
+	data_to_write = (AD5292_CONTROL_WRITE<<10) | control;
 	Wire.beginTransmission(_base);
 	data = (data_to_write >> 8);		// ms byte to write
 	count = Wire.write(data);
@@ -97,7 +97,7 @@ int8_t Systronix_AD5274::control_write_verified(uint8_t control)
 	// now see if control reg was correctly written by reading it
 
 	// write the control read command, data except the command value are don't cares
-	data_to_write = AD5274_CONTROL_READ<<10;
+	data_to_write = AD5292_CONTROL_READ<<10;
 	Wire.beginTransmission(_base);
 	data = (data_to_write >> 8);		// ms byte to write
 	count = Wire.write(data);
@@ -134,14 +134,14 @@ int8_t Systronix_AD5274::control_write_verified(uint8_t control)
 }
 
 /**
- * Send a command read and request data from the AD5274
+ * Send a command read and request data from the AD5292
  * To read, we send a  read command and (possibly) needed location data
  *
  * @param command valid values are
- * AD5274_RDAC_READ - reads current wiper value
- * AD5274_50TP_WIPER_READ also needs six bits of location data (which of 50, 0x01 to 0x32)
- * AD5274_50TP_LAST_READ - read the most recently programmed 50-TP location
- * AD5274_CONTROL_READ - read the value of the control register, in 4 lsbs
+ * AD5292_RDAC_READ - reads current wiper value
+ * AD5292_50TP_WIPER_READ also needs six bits of location data (which of 50, 0x01 to 0x32)
+ * AD5292_50TP_LAST_READ - read the most recently programmed 50-TP location
+ * AD5292_CONTROL_READ - read the value of the control register, in 4 lsbs
  *
  * @param write_datum is only used with read of 50-TP wiper memory, and only six lsb are used
  *
@@ -152,7 +152,7 @@ int8_t Systronix_AD5274::control_write_verified(uint8_t control)
  *
  *
  */
-int16_t Systronix_AD5274::command_read(uint8_t command, uint8_t write_datum)
+int16_t That8BitMan_AD5292::command_read(uint8_t command, uint8_t write_datum)
 {
 	uint8_t error_count = 0;
 	uint8_t data = 0;
@@ -163,14 +163,14 @@ int16_t Systronix_AD5274::command_read(uint8_t command, uint8_t write_datum)
 	uint8_t recvd = 0xFF;	// init with impossible value
 	int8_t count = 0;
 
-	if (AD5274_50TP_WIPER_READ == command)
+	if (AD5292_50TP_WIPER_READ == command)
 	{
 		// shift the command over into bits 13:10
 		data_to_write = command<<10;
 		// also need to send 6-bit 50-TP location
 		data_to_write |= write_datum;
 	}
-	else if ( (AD5274_RDAC_READ == command) || (AD5274_50TP_LAST_USED == command) || (AD5274_CONTROL_READ == command) )
+	else if ( (AD5292_RDAC_READ == command) || (AD5292_50TP_LAST_USED == command) || (AD5292_CONTROL_READ == command) )
 	{
 		// command is in range and something possible to read
 		// shift the command over into bits 13:10
@@ -178,7 +178,7 @@ int16_t Systronix_AD5274::command_read(uint8_t command, uint8_t write_datum)
 	}
 	else
 	{
-		// It's either a bad command (out of range, > AD5274_SHUTDOWN), or its not a readable command
+		// It's either a bad command (out of range, > AD5292_SHUTDOWN), or its not a readable command
 		// Bad command, we can't reasonably proceed
 		error_count = 100;
 		read_datum = error_count * -1;
@@ -230,12 +230,12 @@ int16_t Systronix_AD5274::command_read(uint8_t command, uint8_t write_datum)
 }
 
 /**
- * Write a command to AD5274, Legal write commands are
- * AD5274_RDAC_WRITE write lsb 10- or 8- bit data to RDAC (it must be unlocked to allow this!) (uses sent data)
- * AD5274_50TP_WRITE store RDAC value to next 50-TP location (it must be unlocked to allow this!) (no data need be sent)
- * AD5274_RDAC_REFRESH (software rest) refresh RDAC with last 50-TP stored value (no data need be sent)
- * AD5274_CONTROL_WRITE write data bits 2:0 to the control register (3 lsb data are used)
- * AD5274_SHUTDOWN set data bit 0 to shutdown, clear it for normal operation
+ * Write a command to AD5292, Legal write commands are
+ * AD5292_RDAC_WRITE write lsb 10- or 8- bit data to RDAC (it must be unlocked to allow this!) (uses sent data)
+ * AD5292_50TP_WRITE store RDAC value to next 50-TP location (it must be unlocked to allow this!) (no data need be sent)
+ * AD5292_RDAC_REFRESH (software rest) refresh RDAC with last 50-TP stored value (no data need be sent)
+ * AD5292_CONTROL_WRITE write data bits 2:0 to the control register (3 lsb data are used)
+ * AD5292_SHUTDOWN set data bit 0 to shutdown, clear it for normal operation
  *
  * @param command - the type of write we will do
  *
@@ -247,7 +247,7 @@ int16_t Systronix_AD5274::command_read(uint8_t command, uint8_t write_datum)
  * The lower 3 bits hold the count of I2C errors.
  *
  */
-int8_t Systronix_AD5274::command_write(uint8_t command, uint16_t write_datum16)
+int8_t That8BitMan_AD5292::command_write(uint8_t command, uint16_t write_datum16)
 {
 	uint8_t error_count = 0;
 	uint8_t data = 0;
@@ -264,7 +264,7 @@ int8_t Systronix_AD5274::command_write(uint8_t command, uint16_t write_datum16)
 		error_count |= 0x10;
 	}
 
-	if ( (AD5274_RDAC_WRITE == command) || (AD5274_CONTROL_WRITE == command) || (AD5274_SHUTDOWN == command) )
+	if ( (AD5292_RDAC_WRITE == command) || (AD5292_CONTROL_WRITE == command) || (AD5292_SHUTDOWN == command) )
 	{
 		// these commands need to use data we send over
 		// shift the command over into bits 13:10
@@ -272,7 +272,7 @@ int8_t Systronix_AD5274::command_write(uint8_t command, uint16_t write_datum16)
 		// also need to send 10-bit or 8-bit wiper value, or 3 control bits, or shutdown bit
 		data_to_write |= write_datum16;
 	}
-	else if ( (AD5274_50TP_WRITE == command) || (AD5274_RDAC_REFRESH == command) )
+	else if ( (AD5292_50TP_WRITE == command) || (AD5292_RDAC_REFRESH == command) )
 	{
 		// shift the command over into bits 13:10
 		data_to_write = command<<10;
@@ -280,7 +280,7 @@ int8_t Systronix_AD5274::command_write(uint8_t command, uint16_t write_datum16)
 	}
 	else
 	{
-		// It's either a bad command (out of range, > AD5274_SHUTDOWN), or its not a writeable command
+		// It's either a bad command (out of range, > AD5292_SHUTDOWN), or its not a writeable command
 		// Bad command, we can't reasonably proceed
 		error_count |= 0x20;
 	}
@@ -327,7 +327,7 @@ int8_t Systronix_AD5274::command_write(uint8_t command, uint16_t write_datum16)
  *
  * @return true if the device can be accessed, else it is busy
  */
-boolean Systronix_AD5274::is_available(uint8_t *i2c_status)
+boolean That8BitMan_AD5292::is_available(uint8_t *i2c_status)
 {
 	int8_t error_count = 0;
 	boolean i2c_available = false;
@@ -355,12 +355,8 @@ boolean Systronix_AD5274::is_available(uint8_t *i2c_status)
  * unlock RDAC and/or 50TP memory, or lock them both
  * true unlocks
  */
-int8_t Systronix_AD5274::unlock(boolean rdac, boolean fiftyTP)
+int8_t That8BitMan_AD5292::unlock(boolean rdac, boolean fiftyTP)
 {
 
 	return -90;	// error, this routine is not complete!
 }
-
-
-
-

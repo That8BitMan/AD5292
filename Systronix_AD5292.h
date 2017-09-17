@@ -1,9 +1,9 @@
 /******************************************************************************/
 /*!
 	@file		Systronix_ModulatorShield.h
-	
+
 	@author		B Boyes (Systronix Inc)
-    @license	BSD (see license.txt)	
+    @license	BSD (see license.txt)
     @section	HISTORY
 
 	v1.0	2015 Jul 01 bboyes Start based on working Arduino .ino program
@@ -19,8 +19,7 @@ Wow. Nothing right now. Cool.
 
 /** --------  Description ------------------------------------------------------
  *
- * AD5274 is a digital potentiometer with 8-bits of resolution
- * AD5272 is 10-bit version
+ * AD5292 is a digital potentiometer with 10-bits of resolution
  *
  * Full scale resistance is 10K, 20K, or 100K
 
@@ -35,7 +34,7 @@ Wow. Nothing right now. Cool.
   With the ADDR input grounded our device 7-bit address is B0101111 and since Arduino Wire
   library expects a 7-bit address it should be happy with that.
   Commands are sent msb first, upper two bits are 00 then a 4-bit command, then 10 bits of data;
-  16 bits total. For the 8-bit AD5274 the two lsb of data are don't care.
+  16 bits total. For the 8-bit AD5292 the two lsb of data are don't care.
 
  Commands:
  00 0001 [10-bit data] writes the data to the RDAC. This can be done unlimited times.
@@ -65,16 +64,16 @@ Should also work with Teensy
 #include "Wire.h"
 
 // Preprocessor guard against multiple inclusion
-#ifndef SYSTRONIX_AD5274_H
-#define SYSTRONIX_AD5274_H
+#ifndef THAT8BITMAN_AD5292_H
+#define THAT8BITMAN_AD5292_H
 
 /**
  * I2C ADDRESS CONSTANTS
- * I2C base addresses of AD5274 dependent on ADDR pin connection
+ * I2C base addresses of AD5292 dependent on ADDR pin connection
 */
-#define AD5274_BASE_ADDR_GND 0x2F	/**< Default I2C address iff ADDR=GND, see notes above */
-#define AD5274_BASE_ADDR_VDD 0x2C	/**< I2C address iff ADDR=VDD, see notes above */
-#define AD5274_BASE_ADDR_FLOAT 0x2E	/**< I2C address iff ADDR=floating, see notes above */
+#define AD5292_BASE_ADDR_GND 0x2F	/**< Default I2C address iff ADDR=GND, see notes above */
+#define AD5292_BASE_ADDR_VDD 0x2C	/**< I2C address iff ADDR=VDD, see notes above */
+#define AD5292_BASE_ADDR_FLOAT 0x2E	/**< I2C address iff ADDR=floating, see notes above */
 
 /**
  * COMMAND CONSTANTS
@@ -85,36 +84,36 @@ Should also work with Teensy
  */
 
 // The NOP command is included for completeness. It is a valid I2C operation.
-#define AD5274_COMMAND_NOP 0x00	// Do nothing. Why you would want to do this I don't know
+#define AD5292_COMMAND_NOP 0x00	// Do nothing. Why you would want to do this I don't know
 
 // write the 10 or 8 data bits to the RDAC wiper register (it must be unlocked first)
-#define AD5274_RDAC_WRITE 0x01
+#define AD5292_RDAC_WRITE 0x01
 
-#define AD5274_RDAC_READ 0x02	// read the RDAC wiper register
+#define AD5292_RDAC_READ 0x02	// read the RDAC wiper register
 
-#define AD5274_50TP_WRITE 0x03	// store RDAC setting to 50-TP
+#define AD5292_50TP_WRITE 0x03	// store RDAC setting to 50-TP
 
 // SW reset: refresh RDAC with last 50-TP stored value
 // If not 50-TP value, reset to 50% I think???
 // data bits are all dont cares
-#define AD5274_RDAC_REFRESH 0x04	// TODO refactor this to AD5274_SOFT_RESET
+#define AD5292_RDAC_REFRESH 0x04	// TODO refactor this to AD5292_SOFT_RESET
 
 // read contents of 50-TP in next frame, at location in data bits 5:0,
 // see Table 16 page 22 Rev D datasheet
 // location 0x0 is reserved, 0x01 is first programmed wiper location, 0x32 is 50th programmed wiper location
-#define AD5274_50TP_WIPER_READ 0x05
+#define AD5292_50TP_WIPER_READ 0x05
 
 /**
  * Read contents of last-programmed 50-TP location
  * This is the location used in SW Reset command 4 or on POR
  */
-#define AD5274_50TP_LAST_USED 0x06
+#define AD5292_50TP_LAST_USED 0x06
 
-#define AD5274_CONTROL_WRITE 0x07// data bits 2:0 are the control bits
+#define AD5292_CONTROL_WRITE 0x07// data bits 2:0 are the control bits
 
-#define AD5274_CONTROL_READ 0x08	// data bits all dont cares
+#define AD5292_CONTROL_READ 0x08	// data bits all dont cares
 
-#define AD5274_SHUTDOWN 0x09	// data bit 0 set = shutdown, cleared = normal mode
+#define AD5292_SHUTDOWN 0x09	// data bit 0 set = shutdown, cleared = normal mode
 
 
 /**
@@ -123,23 +122,23 @@ Should also work with Teensy
 // enable writing to the 50-TP memory by setting this control bit C0
 // default is cleared so 50-TP writing is disabled
 // only 50 total writes are possible!
-#define AD5274_50TP_WRITE_ENABLE 0x01
+#define AD5292_50TP_WRITE_ENABLE 0x01
 
 // enable writing to volatile RADC wiper by setting this control bit C1
 // otherwise it is frozen to the value in the 50-TP memory
 // default is cleared, can't write to the wiper
-#define AD5274_RDAC_WIPER_WRITE_ENABLE 0x02
+#define AD5292_RDAC_WIPER_WRITE_ENABLE 0x02
 
 // enable high precision calibration by clearing this control bit C2
 // set this bit to disable high accuracy mode (dunno why you would want to)
 // default is 0 = emabled
-#define AD5274_RDAC_CALIB_DISABLE 0x04
+#define AD5292_RDAC_CALIB_DISABLE 0x04
 
 // 50TP memory has been successfully programmed if this bit is set
-#define AD5274_50TP_WRITE_SUCCESS 0x08
+#define AD5292_50TP_WRITE_SUCCESS 0x08
 
 
-class Systronix_AD5274
+class That8BitMan_AD5292
 {
 	protected:
 		// Instance-specific properties
@@ -148,10 +147,10 @@ class Systronix_AD5274
 		uint8_t _base; 	// I2C base address, see notes above
 		uint8_t _bits;	// 8 or 10 bit device
 
-   
+
 	public:
 
-		Systronix_AD5274(uint8_t base);		// constructor: base address
+		That8BitMan_AD5292(uint8_t base);		// constructor: base address
 
 		int8_t begin(void);
 
@@ -177,4 +176,4 @@ class Systronix_AD5274
 };
 
 
-#endif /* SYSTRONIX_AD5274_H */
+#endif /* THAT8BITMAN_AD5292_H */
