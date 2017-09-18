@@ -1,10 +1,11 @@
 # THIS PROBABLY WON'T WORK YET
+So keep that in mind if you wanted to use it. I'm currently testing it using a Teensy 3.2 running custom code but I only need to change the wiper resistance for my current project so other features may not work.
 
-# Systronix_AD5292
+# AD5292
 Arduino library for the Analog Devices AD5292 with I2C interface.
 The AD5272 is 1024-position (12 bits).
 There are 20 kΩ, 50 kΩ, 100 kΩ nominal resistance versions.
-This library supports both 8- adn 10- bit versions.
+This library supports both 8- and 10- bit versions.
 
 ## AD5292 Key Features
  - I2C Interface. including 400 kHz fast mode
@@ -29,4 +30,3 @@ This library supports both 8- adn 10- bit versions.
 ### TODO
  - Pretty much everything.
  - Update control codes
- -
