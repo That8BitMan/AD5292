@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include <Systronix_AD5274.h>
+#include "./AD5292.h"
 #include <Wire.h>
 
-Systronix_AD5274 my_ad5274(AD5274_BASE_ADDR_GND);
+That8BitMan_AD5292 my_ad5292(AD5292_BASE_ADDR_GND);
 
 // in this IDE, pin 2 is IOL.2 and we drive it low to enable our blue LED
 #define LED_ON_L 2
@@ -16,10 +16,10 @@ void setup() {
 	  // Wait here for 10 seconds to see if we will use Serial Monitor, so output is not lost
 	  while((!Serial) && (millis()<10000));    // wait until serial monitor is open or timeout
 
-	  Serial.print("AD5274 Register Test Code at 0x");
-	  Serial.println(my_ad5274.BaseAddr, HEX);
+	  Serial.print("AD5292 Register Test Code at 0x");
+	  Serial.println(my_ad5292.BaseAddr, HEX);
 
-	  my_ad5274.begin();
+	  my_ad5292.begin();
 
 	  digitalWrite(LED_ON_L, HIGH);      // be sure LED is off; this must be done before making the pin an output!
 	  pinMode(2, OUTPUT);
@@ -28,7 +28,7 @@ void setup() {
 
 }
 
-int16_t read_from_ad5274 = 0;
+int16_t read_from_ad5292 = 0;
 
 uint16_t data_16_to_write = 0;
 int8_t status = 0;
@@ -44,27 +44,27 @@ void loop() {
 	{
 		Serial.print("Try read command: ");
 		Serial.print(command);
-		read_from_ad5274 = my_ad5274.command_read(command, 0x00);
+		read_from_ad5292 = my_ad5292.command_read(command, 0x00);
 		Serial.print(" got ");
-		if (read_from_ad5274 < 0)
+		if (read_from_ad5292 < 0)
 		{
-			Serial.print(read_from_ad5274, HEX);
+			Serial.print(read_from_ad5292, HEX);
 			Serial.print("/");
-			Serial.println(read_from_ad5274);
+			Serial.println(read_from_ad5292);
 
 
 		}
 		else
 		{
-			Serial.println(read_from_ad5274, HEX);
+			Serial.println(read_from_ad5292, HEX);
 		}
 	}
 
 	read_all_50tp();
 
 
-	status = my_ad5274.control_write_verified(0x0);
-	status += my_ad5274.control_write_verified(AD5274_RDAC_WIPER_WRITE_ENABLE);
+	status = my_ad5292.control_write_verified(0x0);
+	status += my_ad5292.control_write_verified(AD5292_RDAC_WIPER_WRITE_ENABLE);
 	if (status > 0)
 	{
 		Serial.print(" Error count after control writes=");
@@ -72,22 +72,22 @@ void loop() {
 	}
 
 	// unlock RDAC
-	status = my_ad5274.command_write(AD5274_CONTROL_WRITE, AD5274_RDAC_WIPER_WRITE_ENABLE);
-	read_from_ad5274 = my_ad5274.command_read(AD5274_CONTROL_READ, 0x00);
-	if (read_from_ad5274 & AD5274_RDAC_WIPER_WRITE_ENABLE)
+	status = my_ad5292.command_write(AD5292_CONTROL_WRITE, AD5292_RDAC_WIPER_WRITE_ENABLE);
+	read_from_ad5292 = my_ad5292.command_read(AD5292_CONTROL_READ, 0x00);
+	if (read_from_ad5292 & AD5292_RDAC_WIPER_WRITE_ENABLE)
 	{
 		Serial.print("RDAC unlock successful: ");
-		Serial.println(read_from_ad5274);
+		Serial.println(read_from_ad5292);
 	}
 	else
 	{
 		Serial.print("RDAC unlock failed: ");
-		Serial.println(read_from_ad5274);
+		Serial.println(read_from_ad5292);
 	}
 
-	read_from_ad5274 = my_ad5274.command_read(AD5274_RDAC_READ, 0x00);
+	read_from_ad5292 = my_ad5292.command_read(AD5292_RDAC_READ, 0x00);
 	Serial.print(" RDAC read 0x");
-	Serial.println(read_from_ad5274, HEX);
+	Serial.println(read_from_ad5292, HEX);
 
 	// write and then read RDAC register
 	data_16_to_write = 0x3FF;
@@ -100,13 +100,13 @@ void loop() {
 	delay(2000);
 
 	Serial.println("SW Reset");
-	status += my_ad5274.command_write(AD5274_RDAC_REFRESH, 0x0);
+	status += my_ad5292.command_write(AD5292_RDAC_REFRESH, 0x0);
 //	Serial.println("Now read RDAC");
 //	delay(1);
 
 
 	uint8_t i2c_busy_code = 0;
-	while (false == my_ad5274.is_available(&i2c_status))
+	while (false == my_ad5292.is_available(&i2c_status))
 	{
 		i2c_busy_count++;
 		i2c_busy_code = i2c_status;
@@ -130,22 +130,22 @@ void loop() {
 		Serial.println(" unexpected reason");
 	}
 
-	read_from_ad5274 = my_ad5274.command_read(AD5274_RDAC_READ, 0x00);
+	read_from_ad5292 = my_ad5292.command_read(AD5292_RDAC_READ, 0x00);
 	Serial.print(" RDAC after SW reset: 0x");
-	Serial.println(read_from_ad5274, HEX);
+	Serial.println(read_from_ad5292, HEX);
 
 	// unlock RDAC
-	status = my_ad5274.command_write(AD5274_CONTROL_WRITE, AD5274_RDAC_WIPER_WRITE_ENABLE);
-	read_from_ad5274 = my_ad5274.command_read(AD5274_CONTROL_READ, 0x00);
-	if (read_from_ad5274 & AD5274_RDAC_WIPER_WRITE_ENABLE)
+	status = my_ad5292.command_write(AD5292_CONTROL_WRITE, AD5292_RDAC_WIPER_WRITE_ENABLE);
+	read_from_ad5292 = my_ad5292.command_read(AD5292_CONTROL_READ, 0x00);
+	if (read_from_ad5292 & AD5292_RDAC_WIPER_WRITE_ENABLE)
 	{
 		Serial.print("RDAC unlock successful: ");
-		Serial.println(read_from_ad5274);
+		Serial.println(read_from_ad5292);
 	}
 	else
 	{
 		Serial.print("RDAC unlock failed: ");
-		Serial.println(read_from_ad5274);
+		Serial.println(read_from_ad5292);
 	}
 
 	// from spreadsheet, 50% should be 0x1AF
@@ -173,12 +173,12 @@ int8_t write_and_read_rdac (uint16_t data_16_to_write)
 {
 	int8_t status = 0;
 
-	status += my_ad5274.command_write(AD5274_RDAC_WRITE, data_16_to_write);
-	read_from_ad5274 = my_ad5274.command_read(AD5274_RDAC_READ, 0x00);
+	status += my_ad5292.command_write(AD5292_RDAC_WRITE, data_16_to_write);
+	read_from_ad5292 = my_ad5292.command_read(AD5292_RDAC_READ, 0x00);
 	Serial.print("RDAC wrote 0x");
 	Serial.print(data_16_to_write, HEX);
 	Serial.print(" read 0x");
-	Serial.println(read_from_ad5274, HEX);
+	Serial.println(read_from_ad5292, HEX);
 
 	return status;
 }
@@ -192,22 +192,23 @@ int8_t read_all_50tp (void)
 	Serial.println ("Reading all 50TP locations (legal are 0x01 through 0x32) - only nonzero data locations are shown");
 	for (uint16_t location = 0; location < 0x400; location++)
 	{
-		read_from_ad5274 = my_ad5274.command_read(AD5274_50TP_WIPER_READ, location);
-		if (read_from_ad5274 < 0)
+		read_from_ad5292 = my_ad5292.command_read(AD5292_50TP_WIPER_READ, location);
+		if (read_from_ad5292 < 0)
 		{
 			Serial.print("@0x");
 			Serial.print(location,HEX);
 			Serial.print(" error ");
-			Serial.println(read_from_ad5274);
+			Serial.println(read_from_ad5292);
 		}
-		else if (read_from_ad5274 > 0)
+		else if (read_from_ad5292 > 0)
 		{
 			Serial.print("@0x");
 			Serial.print(location,HEX);
 			Serial.print(" ");
-			Serial.print(read_from_ad5274, HEX);
+			Serial.print(read_from_ad5292, HEX);
 			Serial.print("/");
-			Serial.println(read_from_ad5274);
+			Serial.println(read_from_ad5292);
 		}
 	}
+  return 0;
 }
