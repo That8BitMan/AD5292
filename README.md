@@ -3,7 +3,7 @@ So keep that in mind if you wanted to use it. I'm currently testing it using a T
 
 # AD5292
 Arduino library for the Analog Devices AD5292 with I2C interface.
-The AD5272 is 1024-position (12 bits).
+The AD5292 is 1024-position (12 bits).
 There are 20 kΩ, 50 kΩ, 100 kΩ nominal resistance versions.
 This library supports both 8- and 10- bit versions.
 
